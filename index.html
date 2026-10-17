@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PSS</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05060a">
+<style>
+  html, body { margin:0; padding:0; background:#05060a; height:100%; overflow:hidden; overscroll-behavior:none; }
+  body { font-family: ui-monospace, Menlo, Consolas, monospace; color:#cfd8e3; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+  #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; }
+  canvas { display:block; background:#05060a; touch-action:none; image-rendering:auto; }
+  #rotate { position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:#05060a; z-index:50; text-align:center; font-size:20px; line-height:1.5; }
+  #rotate.show { display:flex; }
+  /* debug overlay */
+  #dbg-toggle { position:fixed; top:6px; right:6px; z-index:40; width:44px; height:32px; background:rgba(20,30,50,.65); color:#9fd; border:1px solid #2a4a6a; border-radius:6px; font:12px ui-monospace,monospace; opacity:.55; }
+  #dbg { position:fixed; top:42px; right:6px; z-index:40; width:300px; max-height:calc(100% - 50px); overflow:auto; background:rgba(8,12,20,.9); border:1px solid #2a4a6a; border-radius:8px; padding:8px; font-size:12px; display:none; }
+  #dbg.show { display:block; }
+  #dbg h4 { margin:6px 0 4px; font-size:11px; color:#6fa; letter-spacing:.08em; text-transform:uppercase; }
+  #dbg .row { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:4px; align-items:center; }
+  #dbg button { background:#15233a; color:#cfe; border:1px solid #2a4a6a; border-radius:5px; padding:6px 8px; font:12px ui-monospace,monospace; min-width:40px; }
+  #dbg button.on { background:#1f5a3a; border-color:#3c9; }
+  #dbg .kv { color:#9ab; }
+  #dbg .kv b { color:#eef; font-weight:normal; }
+  #dbg #log { white-space:pre-wrap; font-size:11px; color:#9cb; max-height:180px; overflow:auto; background:rgba(0,0,0,.35); padding:4px; border-radius:4px; }
+  #dbg input { width:110px; background:#0b1220; color:#cfe; border:1px solid #2a4a6a; border-radius:4px; padding:4px; font:12px ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="game"></canvas></div>
+<div id="rotate">Rotate your device to landscape<br><small>PSS plays in 16:9</small></div>
+<button id="dbg-toggle">DBG</button>
+<div id="dbg"></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
