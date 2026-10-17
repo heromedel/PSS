@@ -37,15 +37,37 @@ export class DebugOverlay {
     btn('reseed', () => { location.href = location.pathname + '?seed=' + encodeURIComponent(this.seedInput.value); }, r);
     btn('random', () => { location.href = location.pathname; }, r);
 
+    this.el.appendChild(h('h4', '', 'inspect (tags flag on, tap an entity)'));
+    this.inspectEl = h('div', 'kv', '-'); this.el.appendChild(this.inspectEl);
+
     this.el.appendChild(h('h4', '', 'admin'));
     this.adminRow = row();
+    btn('spawn piranha', () => this.game.spawnTestShip(), this.adminRow);
+    btn('clear enemies', () => this.game.clearEnemies(), this.adminRow);
     btn('clear log', () => { this.logLines = []; this.logEl.textContent = ''; }, this.adminRow);
+    btn('copy log', () => this.copyLog(), this.adminRow);
+    this.copyArea = h('textarea'); this.copyArea.style.cssText = 'display:none;width:100%;height:90px;background:#0b1220;color:#cfe;border:1px solid #2a4a6a;font:11px ui-monospace,monospace;';
+    this.el.appendChild(this.copyArea);
 
     this.el.appendChild(h('h4', '', 'log'));
     this.logEl = h('div'); this.logEl.id = 'log'; this.el.appendChild(this.logEl);
   }
   // game modules register admin buttons here
   addAdmin(label, fn) { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); this.adminRow.appendChild(b); return b; }
+  sessionText() {
+    const g = this.game, l = this.loop;
+    const head = [`PSS session`, `seed=${g.seedText} tick=${l.tick} sim=${l.simTime.toFixed(1)}s fps=${l.fps} ua=${navigator.userAgent}`,
+      `screen=${innerWidth}x${innerHeight} dpr=${devicePixelRatio} field_scale=${g.screen.scale.toFixed(3)}`,
+      `player=${g.player.x.toFixed(0)},${g.player.y.toFixed(0)} entities=${g.world.count()}`, `--- log ---`];
+    return head.concat(this.bus.log.map(e => `${(e.t / 1000).toFixed(1)} ${fmtEvent(e)}`)).join('\n');
+  }
+  async copyLog() {
+    const txt = this.sessionText();
+    try { await navigator.clipboard.writeText(txt); this.bus.emit('debug.copied', { chars: txt.length }); }
+    catch { // iOS fallback: show a textarea the user can long-press to copy
+      this.copyArea.style.display = 'block'; this.copyArea.value = txt; this.copyArea.focus(); this.copyArea.select();
+    }
+  }
   appendLog(e) {
     const line = `${(e.t / 1000).toFixed(1)} ${fmtEvent(e)}`;
     this.logLines.push(line); if (this.logLines.length > 40) this.logLines.shift();
@@ -59,5 +81,10 @@ export class DebugOverlay {
       `seed <b>${g.seedText}</b> rng calls <b>${g.rng.calls}</b><br>` +
       `entities <b>${g.world.count()}</b> bullets <b>${g.world.countTag('bullet')}</b><br>` +
       `player <b>${g.player.x.toFixed(0)},${g.player.y.toFixed(0)}</b> drag <b>${g.input.dragActive ? 'yes' : 'no'}</b>`;
+    const ins = g.inspected;
+    if (ins && g.world.entities.has(ins.id)) {
+      const rows = Object.entries(ins.tags).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}: <b>${typeof v === 'number' ? +v.toFixed(2) : v}</b>`);
+      this.inspectEl.innerHTML = `#${ins.id} ${ins.def?.name || ''} @ ${ins.x.toFixed(0)},${ins.y.toFixed(0)} r=${ins.r.toFixed(0)}<br>` + rows.join('<br>');
+    } else this.inspectEl.textContent = '-';
   }
 }
