@@ -1,5 +1,8 @@
 // On-screen debug overlay (DOM). Phone-friendly: big buttons, live log, admin hooks.
 import { fmtEvent } from '../engine/events.js';
+import { BASES } from '../content/bases.js';
+import { componentsForSlot } from '../content/components.js';
+import { EXAMPLE_BUILDS } from '../game/game.js';
 
 export class DebugOverlay {
   constructor(game) {
@@ -30,6 +33,7 @@ export class DebugOverlay {
 
     this.el.appendChild(h('h4', '', 'flags'));
     r = row(); flagBtn('god', 'god', r); flagBtn('hitboxes', 'hitboxes', r); flagBtn('tags', 'tags', r);
+    this.flags.enemyFire = true; const ef = flagBtn('enemy fire', 'enemyFire', r); ef.classList.add('on');
 
     this.el.appendChild(h('h4', '', 'seed'));
     r = row();
@@ -40,9 +44,11 @@ export class DebugOverlay {
     this.el.appendChild(h('h4', '', 'inspect (tags flag on, tap an entity)'));
     this.inspectEl = h('div', 'kv', '-'); this.el.appendChild(this.inspectEl);
 
+    this.el.appendChild(h('h4', '', 'spawn'));
+    this.buildSpawnMenu(h, row, btn);
+
     this.el.appendChild(h('h4', '', 'admin'));
     this.adminRow = row();
-    btn('spawn piranha', () => this.game.spawnTestShip(), this.adminRow);
     btn('clear enemies', () => this.game.clearEnemies(), this.adminRow);
     btn('clear log', () => { this.logLines = []; this.logEl.textContent = ''; }, this.adminRow);
     btn('copy log', () => this.copyLog(), this.adminRow);
@@ -51,6 +57,29 @@ export class DebugOverlay {
 
     this.el.appendChild(h('h4', '', 'log'));
     this.logEl = h('div'); this.logEl.id = 'log'; this.el.appendChild(this.logEl);
+  }
+  buildSpawnMenu(h, row, btn) {
+    const r = row();
+    const baseSel = h('select'); baseSel.style.cssText = 'background:#0b1220;color:#cfe;border:1px solid #2a4a6a;padding:4px;font:12px ui-monospace,monospace;';
+    for (const b of Object.values(BASES)) { if (b.faction === 'player') continue; const o = h('option', '', b.name); o.value = b.id; baseSel.appendChild(o); }
+    r.appendChild(baseSel);
+    btn('example', () => fill(EXAMPLE_BUILDS[baseSel.value] || {}), r);
+    btn('spawn', () => { const build = {}; for (const [id, sel] of Object.entries(nodeSels)) if (sel.value) build[id] = sel.value; this.game.spawnEnemy(baseSel.value, build); }, r);
+    const nodesEl = h('div'); this.el.appendChild(nodesEl);
+    let nodeSels = {};
+    const rebuild = () => {
+      nodesEl.innerHTML = ''; nodeSels = {};
+      for (const n of BASES[baseSel.value].nodes) {
+        const nr = h('div', 'row'); nr.appendChild(h('span', 'kv', `${n.id} (${n.slot}${n.mirror ? ' x2' : ''})`));
+        const sel = h('select'); sel.style.cssText = baseSel.style.cssText;
+        sel.appendChild(h('option', '', '-')); sel.lastChild.value = '';
+        for (const c of componentsForSlot(n.slot)) { const o = h('option', '', c.name); o.value = c.id; sel.appendChild(o); }
+        nr.appendChild(sel); nodesEl.appendChild(nr); nodeSels[n.id] = sel;
+      }
+      fill(EXAMPLE_BUILDS[baseSel.value] || {});
+    };
+    const fill = build => { for (const [id, sel] of Object.entries(nodeSels)) sel.value = build[id] || ''; };
+    baseSel.addEventListener('change', rebuild); rebuild();
   }
   // game modules register admin buttons here
   addAdmin(label, fn) { const b = document.createElement('button'); b.textContent = label; b.addEventListener('click', fn); this.adminRow.appendChild(b); return b; }
