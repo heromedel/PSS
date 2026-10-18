@@ -5,7 +5,7 @@
 export const COMPONENTS = {
   // wings
   wing_starter: { id: 'wing_starter', name: 'Starter Fin', slot: 'wing',
-    tags: { speed: 520 }, durability: 20, shape: [[0, -12], [10, 8], [10, 14], [-2, 14], [-3, 0]] },
+    tags: { speed: 520, starter: 1 }, durability: 20, shape: [[0, -12], [10, 8], [10, 14], [-2, 14], [-3, 0]] },
   wing_hover: { id: 'wing_hover', name: 'Hover Vane', slot: 'wing',
     tags: { speed: 140, pattern: 'hold_strafe' }, durability: 15, shape: [[0, -8], [14, 4], [14, 10], [0, 12], [-3, 2]] },
   wing_diver: { id: 'wing_diver', name: 'Diver Wing', slot: 'wing',
@@ -14,7 +14,7 @@ export const COMPONENTS = {
     tags: { speed: 260, pattern: 'sweep' }, durability: 12, shape: [[0, -14], [8, 2], [16, 14], [2, 10], [-2, 0]] },
   // weapons
   weapon_starter: { id: 'weapon_starter', name: 'Starter Blaster', slot: 'weapon',
-    tags: { fire: 'single', fireRate: 6, velocity: 900, damage: 8, bypass: 0 },
+    tags: { fire: 'single', fireRate: 4, velocity: 900, damage: 5, bypass: 0, starter: 1 },
     durability: 20, shape: [[-4, -12], [4, -12], [4, 8], [-4, 8]] },
   weapon_pebble: { id: 'weapon_pebble', name: 'Pebble Shot', slot: 'weapon',
     tags: { fire: 'single', fireRate: 0.5, velocity: 180, damage: 15, bypass: 0 },
@@ -39,7 +39,7 @@ export const COMPONENTS = {
     tags: { baseSizeMult: 1.8, durabilityMult: 4, fireRateMult: 1.4, boss: 1 }, durability: 10, shape: [[0, -7], [7, 0], [0, 7], [-7, 0]] },
   // utility (player only)
   util_salvage_bay: { id: 'util_salvage_bay', name: 'Salvage Bay', slot: 'utility',
-    tags: { beamRange: 260, towSlow: 0.45, fieldRadius: 70 },
+    tags: { beamRange: 260, towSlow: 0.45, fieldRadius: 70, starter: 1 },
     durability: 20, shape: [[-7, -4], [7, -4], [5, 8], [-5, 8]] },
   // drops
   drop_basic: { id: 'drop_basic', name: 'Scrap Cache', slot: 'drop',

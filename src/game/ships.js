@@ -39,13 +39,23 @@ export function assembleShip(world, baseId, build, { x, y, heading = 0, faction,
       ship.children.push(comp);
     }
     // one wing step per node (a mirrored pair is a single step)
-    if (node.slot === 'wing' && cdef.tags.pattern) ship.wingSteps.push(ship.children[ship.children.length - 1]);
+    if (node.slot === 'wing' && cdef.tags.pattern) ship.wingSteps.push(node.id);
   }
   syncChildren(ship);
   return ship;
 }
 
-export function activeWing(ship) { return ship.wingSteps.length ? ship.wingSteps[ship.stepIndex % ship.wingSteps.length] : null; }
+// Steps are node ids; a step survives while any wing of that node (either of a mirrored pair) is alive.
+export function activeWing(ship) {
+  while (ship.wingSteps.length) {
+    const id = ship.wingSteps[ship.stepIndex % ship.wingSteps.length];
+    const w = ship.children.find(k => k.tags.node === id && k.tags.slot === 'wing');
+    if (w) return w;
+    ship.wingSteps.splice(ship.stepIndex % ship.wingSteps.length, 1);
+    if (ship.wingSteps.length) ship.stepIndex %= ship.wingSteps.length;
+  }
+  return null;
+}
 export function shipSpeed(ship) {
   const w = activeWing(ship); if (w) return w.tags.speed;
   let s = 0; for (const k of ship.children) if (k.tags.slot === 'wing') s = Math.max(s, k.tags.speed || 0); return s || 200;
@@ -70,12 +80,17 @@ const SLOT_COLORS = { wing: '#f0a84a', weapon: '#ff6b6b', armor: '#9aa7b8', shie
 export function drawShip(c, ship, flags = {}) {
   const def = ship.def, scale = ship.baseSize;
   c.save(); c.translate(ship.x, ship.y); c.rotate(ship.heading); c.scale(scale, scale);
-  c.fillStyle = ship.tags.faction === 'player' ? '#2f6f8f' : '#7a3b4f';
+  c.fillStyle = (ship.flash > 0) ? '#fff' : (ship.tags.faction === 'player' ? '#2f6f8f' : '#7a3b4f');
+  if (ship.invuln > 0 && Math.floor(ship.invuln * 10) % 2 === 0) c.globalAlpha = 0.35;
   c.strokeStyle = ship.tags.faction === 'player' ? '#9fe' : '#f9b';
   c.lineWidth = 1.5 / scale;
   poly(c, def.shape); c.fill(); c.stroke();
   c.restore();
   for (const k of ship.children) drawComponent(c, k, ship.compScale);
+  if (ship.shield && ship.shield.up) {
+    c.strokeStyle = 'rgba(111,211,255,0.8)'; c.fillStyle = 'rgba(111,211,255,0.10)'; c.lineWidth = 2;
+    c.beginPath(); c.arc(ship.x, ship.y, ship.shield.radius, 0, Math.PI * 2); c.fill(); c.stroke();
+  }
   if (flags.hitboxes) {
     c.strokeStyle = '#f66'; c.beginPath(); c.arc(ship.x, ship.y, ship.r, 0, Math.PI * 2); c.stroke();
     c.strokeStyle = '#fa6'; for (const k of ship.children) { c.beginPath(); c.arc(k.x, k.y, k.r, 0, Math.PI * 2); c.stroke(); }
@@ -83,7 +98,7 @@ export function drawShip(c, ship, flags = {}) {
 }
 export function drawComponent(c, k, sizing) {
   c.save(); c.translate(k.x, k.y); c.rotate(k.heading); c.scale(k.mirrored ? -sizing : sizing, sizing);
-  c.fillStyle = SLOT_COLORS[k.tags.slot] || '#fff'; c.globalAlpha = 0.9;
+  c.fillStyle = (k.flash > 0) ? '#fff' : (SLOT_COLORS[k.tags.slot] || '#fff'); c.globalAlpha = 0.9;
   c.lineWidth = 1 / sizing; c.strokeStyle = '#000';
   poly(c, k.def.shape); c.fill(); c.stroke();
   c.restore();

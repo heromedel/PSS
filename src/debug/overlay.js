@@ -3,6 +3,7 @@ import { fmtEvent } from '../engine/events.js';
 import { BASES } from '../content/bases.js';
 import { componentsForSlot } from '../content/components.js';
 import { EXAMPLE_BUILDS } from '../game/game.js';
+import { COMBAT } from '../game/systems/combat.js';
 
 export class DebugOverlay {
   constructor(game) {
@@ -20,7 +21,7 @@ export class DebugOverlay {
     const h = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
     const row = () => { const r = h('div', 'row'); this.el.appendChild(r); return r; };
     const btn = (label, fn, parent) => { const b = h('button', '', label); b.addEventListener('click', fn); (parent || row()).appendChild(b); return b; };
-    const flagBtn = (label, key, parent) => { const b = btn(label, () => { this.flags[key] = !this.flags[key]; b.classList.toggle('on', this.flags[key]); this.bus.emit('debug.flag', { flag: key, on: this.flags[key] }); }, parent); return b; };
+    const flagBtn = (label, key, parent) => { const b = btn(label, () => { this.flags[key] = !this.flags[key]; b.classList.toggle('on', this.flags[key]); this.game.runCommand('flag', { flag: key, on: this.flags[key] }); this.bus.emit('debug.flag', { flag: key, on: this.flags[key] }); }, parent); return b; };
 
     this.el.appendChild(h('h4', '', 'status'));
     this.status = h('div', 'kv'); this.el.appendChild(this.status);
@@ -52,6 +53,11 @@ export class DebugOverlay {
     btn('clear enemies', () => this.game.clearEnemies(), this.adminRow);
     btn('clear log', () => { this.logLines = []; this.logEl.textContent = ''; }, this.adminRow);
     btn('copy log', () => this.copyLog(), this.adminRow);
+    btn('copy replay', () => this.copyText(this.game.recorder.export(), 'replay'), this.adminRow);
+    btn('load replay', () => { const a = this.copyArea; a.style.display = 'block'; a.value = ''; a.placeholder = 'paste replay JSON here'; a.focus();
+      a.oninput = () => { try { this.game.recorder.load(a.value); } catch (e) { this.bus.emit('replay.error', { msg: e.message }); } }; }, this.adminRow);
+    const tr = row(); tr.appendChild(h('span', 'kv', 'dmg transfer'));
+    for (const v of [0, 0.25, 0.33, 0.5]) btn(v, () => { COMBAT.transfer = v; this.bus.emit('debug.transfer', { v }); }, tr);
     this.copyArea = h('textarea'); this.copyArea.style.cssText = 'display:none;width:100%;height:90px;background:#0b1220;color:#cfe;border:1px solid #2a4a6a;font:11px ui-monospace,monospace;';
     this.el.appendChild(this.copyArea);
 
@@ -90,9 +96,9 @@ export class DebugOverlay {
       `player=${g.player.x.toFixed(0)},${g.player.y.toFixed(0)} entities=${g.world.count()}`, `--- log ---`];
     return head.concat(this.bus.log.map(e => `${(e.t / 1000).toFixed(1)} ${fmtEvent(e)}`)).join('\n');
   }
-  async copyLog() {
-    const txt = this.sessionText();
-    try { await navigator.clipboard.writeText(txt); this.bus.emit('debug.copied', { chars: txt.length }); }
+  copyLog() { return this.copyText(this.sessionText(), 'log'); }
+  async copyText(txt, what) {
+    try { await navigator.clipboard.writeText(txt); this.bus.emit('debug.copied', { what, chars: txt.length }); }
     catch { // iOS fallback: show a textarea the user can long-press to copy
       this.copyArea.style.display = 'block'; this.copyArea.value = txt; this.copyArea.focus(); this.copyArea.select();
     }

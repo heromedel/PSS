@@ -18,6 +18,8 @@ const loop = new Loop({ update: dt => { game.update(dt); }, render: () => { game
 const game = new Game({ screen, input, bus, rng, seedText, loop });
 const dbg = new DebugOverlay(game);
 if (params.has('debug')) dbg.setVisible(true);
+if (params.get('replay') === 'pending') { const t = sessionStorage.getItem('pss.replay'); sessionStorage.removeItem('pss.replay'); if (t) game.recorder.attach(JSON.parse(t)); }
+if (params.has('pause')) loop.paused = true;
 
 window.PSS = { game, loop, bus, rng, dbg }; // console access for desktop testing
 window.addEventListener('error', e => bus.emit('error', { msg: e.message, src: (e.filename || '').split('/').pop(), line: e.lineno }));
